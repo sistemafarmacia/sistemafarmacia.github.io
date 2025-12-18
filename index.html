@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auxiliar de Fechamento do Caixa</title>
+    <link rel="icon" href="Gemini_Generated_Image_doriordoriordori.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div id="successAnimation" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex-col items-center justify-center hidden z-50">
+        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+            <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none" />
+            <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+        </svg>
+        <p class="welcome-text text-white text-4xl font-bold mt-6">Bem-vindo!</p>
+    </div>
+
+    <div id="loginModule" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Login do Sistema de Caixa</h1>
+        <form id="loginForm" class="space-y-4">
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700">Nome de Usuário:</label>
+                <input type="text" id="username" class="input-field mt-1" required>
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">Senha:</label>
+                <input type="password" id="password" class="input-field mt-1" required>
+            </div>
+            <button type="submit" class="btn-primary w-full">Entrar</button>
+        </form>
+        <p id="loginError" class="text-red-500 text-center mt-4 hidden"></p>
+    </div>
+
+    <div id="mainApp" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Auxiliar de Fechamento do Caixa</h1>
+            <div class="flex items-center space-x-4">
+                <span id="loggedInUserDisplay" class="text-gray-700 font-semibold"></span>
+                <button id="logoutBtn" class="btn-secondary">Sair</button>
+            </div>
+        </div>
+
+        <div class="bg-blue-100 p-4 rounded-lg shadow-sm mb-6 flex justify-between items-center">
+            <span id="cashRegisterStatus" class="text-blue-800 font-semibold text-lg">Caixa: Fechado</span>
+            <div>
+                <button id="openCashRegisterBtn" class="btn-primary mr-2">Abrir Caixa</button>
+                <button id="closeCashRegisterBtn" class="btn-danger hidden">Fechar Caixa</button>
+            </div>
+        </div>
+
+        <div class="flex justify-center mb-6">
+            <button id="tabPostClosing" class="tab-button px-6 py-3 rounded-l-lg font-semibold text-lg bg-blue-600 text-white shadow-md transition-colors duration-200 active">Vendas Pós-Fechamento</button>
+            <button id="tabLooseProducts" class="tab-button px-6 py-3 font-semibold text-lg bg-gray-300 text-gray-700 shadow-md transition-colors duration-200">Produtos Avulsos</button>
+            <button id="tabCashRegisterHistory" class="tab-button px-6 py-3 font-semibold text-lg bg-gray-300 text-gray-700 shadow-md transition-colors duration-200">Histórico de Caixas</button>
+            <button id="tabGeneralReports" class="tab-button px-6 py-3 font-semibold text-lg bg-gray-300 text-gray-700 shadow-md transition-colors duration-200">Relatórios Gerais</button>
+            <button id="tabCalculator" class="tab-button px-6 py-3 font-semibold text-lg bg-gray-300 text-gray-700 shadow-md transition-colors duration-200">
+                <i class="fas fa-calculator mr-2"></i>Calculadora
+            </button>
+            <button id="tabAdmin" class="tab-button px-6 py-3 rounded-r-lg font-semibold text-lg bg-gray-300 text-gray-700 shadow-md transition-colors duration-200 hidden">Administração</button>
+        </div>
+
+        <div id="confirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+                <h3 class="text-xl font-semibold mb-4">Confirmação</h3>
+                <p id="confirmationMessage" class="mb-6">Você tem certeza que deseja realizar esta ação?</p>
+                <div class="flex justify-end space-x-4">
+                    <button id="cancelConfirm" class="btn-secondary">Cancelar</button>
+                    <button id="executeConfirm" class="btn-danger">Confirmar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="messageBox" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+                <h3 class="text-xl font-semibold mb-4">Aviso</h3>
+                <p id="messageContent" class="mb-6"></p>
+                <div class="flex justify-end">
+                    <button id="closeMessage" class="btn-primary">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="backupPromptModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+                <h3 class="text-xl font-semibold mb-4">Realizar Backup?</h3>
+                <p class="mb-6">Deseja realizar um backup dos dados antes de sair?</p>
+                <div class="flex justify-end space-x-4">
+                    <button id="backupPromptNo" class="btn-secondary">Não</button>
+                    <button id="backupPromptYes" class="btn-primary">Sim</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="backupPathModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+                <h3 class="text-xl font-semibold mb-4">Configurar Pasta de Backup</h3>
+                <p class="mb-4 text-gray-700">
+                    Para realizar o backup, copie o endereço da pasta sugerida e cole no campo abaixo.
+                    O arquivo será salvo na sua pasta padrão de downloads do navegador.
+                </p>
+                <div class="mb-4">
+                    <label for="suggestedBackupPath" class="block text-sm font-medium text-gray-700">Pasta Sugerida:</label>
+                    <input type="text" id="suggestedBackupPath" class="input-field mt-1 bg-gray-100" value="C:\FarmaciaBackups" readonly>
+                    <button onclick="copyToClipboard('suggestedBackupPath')" class="btn-secondary mt-2 px-4 py-2 text-sm">Copiar</button>
+                </div>
+                <div class="mb-6">
+                    <label for="confirmBackupPath" class="block text-sm font-medium text-gray-700">Colar Endereço Aqui:</label>
+                    <input type="text" id="confirmBackupPath" class="input-field mt-1" placeholder="Cole o endereço aqui" required>
+                    <p id="backupPathError" class="text-red-500 text-sm mt-1 hidden">Os endereços não correspondem.</p>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button id="cancelBackupPath" class="btn-secondary">Cancelar</button>
+                    <button id="performBackupBtn" class="btn-primary" disabled>Realizar Backup</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="cashRegisterReportDetailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold">Detalhes do Caixa</h3>
+                    <button id="closeCashRegisterReportDetail" class="text-gray-500 hover:text-gray-700 text-2xl font-bold close-button">&times;</button>
+                </div>
+                <div id="cashRegisterReportDetailContent" class="report-output">
+                    </div>
+                <div class="flex justify-end mt-4 space-x-4">
+                    <button id="printCashRegisterReportDetail" class="btn-primary">Imprimir Relatório Completo</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="postClosingModule" class="module-content">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Registro de Vendas Pós-Fechamento</h2>
+            <form id="postClosingForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
+                <input type="hidden" id="postClosingId">
+                <input type="hidden" id="postClosingOperatorId">
+                <input type="hidden" id="postClosingOperatorName">
+                <input type="hidden" id="postClosingCashRegisterSessionId">
+                <input type="hidden" id="postClosingCashRegisterSessionNumber">
+                <div>
+                    <label for="postClosingDate" class="block text-sm font-medium text-gray-700">Data da Venda:</label>
+                    <input type="date" id="postClosingDate" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="postClosingTime" class="block text-sm font-medium text-gray-700">Hora da Venda:</label>
+                    <input type="time" id="postClosingTime" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="postClosingValue" class="block text-sm font-medium text-gray-700">Valor da Venda (R$):</label>
+                    <input type="number" id="postClosingValue" class="input-field mt-1" step="0.01" required>
+                </div>
+                <div>
+                    <label for="postClosingCardType" class="block text-sm font-medium text-gray-700">Tipo de Pagamento:</label>
+                    <select id="postClosingCardType" class="input-field mt-1" required>
+                        <option value="">Selecione</option>
+                        <option value="Débito">Débito</option>
+                        <option value="Crédito">Crédito</option>
+                        <option value="Pix">Pix</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="postClosingCardBrand" class="block text-sm font-medium text-gray-700">Bandeira/Meio (Opcional):</label>
+                    <input type="text" id="postClosingCardBrand" class="input-field mt-1" placeholder="Ex: Visa, Mastercard, N/A para Pix">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="postClosingObservations" class="block text-sm font-medium text-gray-700">Observações (Opcional):</label>
+                    <textarea id="postClosingObservations" class="input-field mt-1 h-20"></textarea>
+                </div>
+                <div class="md:col-span-2 flex justify-end space-x-4">
+                    <button type="submit" class="btn-primary">Adicionar Venda</button>
+                    <button type="button" id="cancelPostClosingEdit" class="btn-secondary hidden">Cancelar Edição</button>
+                </div>
+            </form>
+            <h3 class="text-xl font-semibold text-gray-700 mb-3">Vendas Registradas</h3>
+            <div class="table-container rounded-lg shadow-sm mb-6">
+                <table class="min-w-full bg-white border-collapse">
+                    <thead>
+                        <tr class="table-header">
+                            <th>Data</th>
+                            <th>Hora</th>
+                            <th>Valor</th>
+                            <th>Tipo</th>
+                            <th>Bandeira/Meio</th>
+                            <th>Operador (Caixa)</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="postClosingList">
+                        </tbody>
+                </table>
+            </div>
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm report-output-container">
+                <h3 class="text-xl font-semibold text-gray-700 mb-3 report-header">Gerar Relatório de Vendas Pós-Fechamento</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="reportPostClosingStartDate" class="block text-sm font-medium text-gray-700">Data Início:</label>
+                        <input type="date" id="reportPostClosingStartDate" class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="reportPostClosingEndDate" class="block text-sm font-medium text-gray-700">Data Fim:</label>
+                        <input type="date" id="reportPostClosingEndDate" class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="reportPostClosingOperator" class="block text-sm font-medium text-gray-700">Filtrar por Operador:</label>
+                        <select id="reportPostClosingOperator" class="input-field mt-1">
+                            <option value="all">Todos os Operadores</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="reportPostClosingCashRegister" class="block text-sm font-medium text-gray-700">Filtrar por Caixa:</label>
+                        <select id="reportPostClosingCashRegister" class="input-field mt-1">
+                            <option value="all">Todos os Caixas</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button id="generatePostClosingReport" class="btn-primary">Gerar Relatório</button>
+                    <button id="printPostClosingReport" class="btn-secondary hidden">Imprimir Relatório</button>
+                </div>
+                <div id="postClosingReportOutput" class="report-output mt-4 hidden"></div>
+            </div>
+        </div>
+
+        <div id="looseProductsModule" class="module-content hidden">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Registro de Produtos Avulsos</h2>
+            <form id="looseProductsForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
+                <input type="hidden" id="looseProductId">
+                <input type="hidden" id="looseProductOperatorId">
+                <input type="hidden" id="looseProductOperatorName">
+                <input type="hidden" id="looseProductCashRegisterSessionId">
+                <input type="hidden" id="looseProductCashRegisterSessionNumber">
+                <div>
+                    <label for="looseProductDate" class="block text-sm font-medium text-gray-700">Data da Venda:</label>
+                    <input type="date" id="looseProductDate" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="looseProductName" class="block text-sm font-medium text-gray-700">Nome do Produto:</label>
+                    <input type="text" id="looseProductName" class="input-field mt-1" placeholder="Ex: Remédio Genérico X" required>
+                </div>
+                <div>
+                    <label for="looseProductQuantity" class="block text-sm font-medium text-gray-700">Quantidade:</label>
+                    <input type="number" id="looseProductQuantity" class="input-field mt-1" min="1" value="1" required>
+                </div>
+                <div>
+                    <label for="looseProductUnitPrice" class="block text-sm font-medium text-gray-700">Preço Unitário (R$):</label>
+                    <input type="number" id="looseProductUnitPrice" class="input-field mt-1" step="0.01" required>
+                </div>
+                <div class="md:col-span-2">
+                    <label for="looseProductObservations" class="block text-sm font-medium text-gray-700">Observações (Opcional):</label>
+                    <textarea id="looseProductObservations" class="input-field mt-1 h-20"></textarea>
+                </div>
+                <div class="md:col-span-2 flex justify-end space-x-4">
+                    <button type="submit" class="btn-primary">Adicionar Produto</button>
+                    <button type="button" id="cancelLooseProductEdit" class="btn-secondary hidden">Cancelar Edição</button>
+                </div>
+            </form>
+            <h3 class="text-xl font-semibold text-gray-700 mb-3">Produtos Registrados</h3>
+            <div class="table-container rounded-lg shadow-sm mb-6">
+                <table class="min-w-full bg-white border-collapse">
+                    <thead>
+                        <tr class="table-header">
+                            <th>Data</th>
+                            <th>Produto</th>
+                            <th>Qtde</th>
+                            <th>Preço Unit.</th>
+                            <th>Total</th>
+                            <th>Operador (Caixa)</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="looseProductList">
+                        </tbody>
+                </table>
+            </div>
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm report-output-container">
+                <h3 class="text-xl font-semibold text-gray-700 mb-3 report-header">Gerar Relatório de Produtos Avulsos</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="reportLooseProductStartDate" class="block text-sm font-medium text-gray-700">Data Início:</label>
+                        <input type="date" id="reportLooseProductStartDate" class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="reportLooseProductEndDate" class="block text-sm font-medium text-gray-700">Data Fim:</label>
+                        <input type="date" id="reportLooseProductEndDate" class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="reportLooseProductStartTime" class="block text-sm font-medium text-gray-700">Hora Início:</label>
+                        <input type="time" id="reportLooseProductStartTime" class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="reportLooseProductEndTime" class="block text-sm font-medium text-gray-700">Hora Fim:</label>
+                        <input type="time" id="reportLooseProductEndTime" class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="reportLooseProductOperator" class="block text-sm font-medium text-gray-700">Filtrar por Operador:</label>
+                        <select id="reportLooseProductOperator" class="input-field mt-1">
+                            <option value="all">Todos os Operadores</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="reportLooseProductCashRegister" class="block text-sm font-medium text-gray-700">Filtrar por Caixa:</label>
+                        <select id="reportLooseProductCashRegister" class="input-field mt-1">
+                            <option value="all">Todos os Caixas</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button id="generateLooseProductReport" class="btn-primary">Gerar Relatório</button>
+                    <button id="printLooseProductReport" class="btn-secondary hidden">Imprimir Relatório</button>
+                </div>
+                <div id="looseProductReportOutput" class="report-output mt-4 hidden"></div>
+            </div>
+        </div>
+
+        <div id="cashRegisterHistoryModule" class="module-content hidden">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Histórico de Caixas</h2>
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="historyStartDate" class="block text-sm font-medium text-gray-700">Data Início:</label>
+                        <input type="date" id="historyStartDate" class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="historyEndDate" class="block text-sm font-medium text-gray-700">Data Fim:</label>
+                        <input type="date" id="historyEndDate" class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="historyOperator" class="block text-sm font-medium text-gray-700">Filtrar por Operador:</label>
+                        <select id="historyOperator" class="input-field mt-1">
+                            <option value="all">Todos os Operadores</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button id="filterCashRegisterHistoryBtn" class="btn-primary">Filtrar Histórico</button>
+                </div>
+            </div>
+            <div class="table-container rounded-lg shadow-sm mb-6">
+                <table class="min-w-full bg-white border-collapse">
+                    <thead>
+                        <tr class="table-header">
+                            <th>Caixa Nº</th>
+                            <th>Operador</th>
+                            <th>Abertura</th>
+                            <th>Fechamento</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cashRegisterHistoryList">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="generalReportsModule" class="module-content hidden">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Relatórios de Movimentação Geral</h2>
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm report-output-container">
+                <h3 class="text-xl font-semibold text-gray-700 mb-3 report-header">Gerar Relatório Geral</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="reportGeneralStartDate" class="block text-sm font-medium text-gray-700">Data Início:</label>
+                        <input type="date" id="reportGeneralStartDate" class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="reportGeneralEndDate" class="block text-sm font-medium text-gray-700">Data Fim:</label>
+                        <input type="date" id="reportGeneralEndDate" class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="reportGeneralOperator" class="block text-sm font-medium text-gray-700">Filtrar por Operador:</label>
+                        <select id="reportGeneralOperator" class="input-field mt-1">
+                            <option value="all">Todos os Operadores</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="reportGeneralCashRegister" class="block text-sm font-medium text-gray-700">Filtrar por Caixa:</label>
+                        <select id="reportGeneralCashRegister" class="input-field mt-1">
+                            <option value="all">Todos os Caixas</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4 report-type-selection">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Dados do Relatório:</label>
+                    <div class="flex flex-wrap items-center space-x-4">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="reportDataSource" value="all" class="form-radio text-blue-600" checked>
+                            <span class="ml-2 text-gray-700">Geral (Pós-Fechamento + Avulsos)</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="reportDataSource" value="postClosing" class="form-radio text-blue-600">
+                            <span class="ml-2 text-gray-700">Apenas Vendas Pós-Fechamento</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="reportDataSource" value="looseProducts" class="form-radio text-blue-600">
+                            <span class="ml-2 text-gray-700">Apenas Produtos Avulsos</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="mb-4 report-type-selection">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Formato do Relatório:</label>
+                    <div class="flex items-center space-x-4">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="reportType" value="full" class="form-radio text-blue-600" checked>
+                            <span class="ml-2 text-gray-700">Completo</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="reportType" value="summary" class="form-radio text-blue-600">
+                            <span class="ml-2 text-gray-700">Resumido</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button id="generateGeneralReportBtn" class="btn-primary">Gerar Relatório Geral</button>
+                    <button id="printGeneralReportBtn" class="btn-secondary hidden">Imprimir Relatório Geral</button>
+                </div>
+                <div id="generalReportOutput" class="report-output mt-4 hidden"></div>
+            </div>
+        </div>
+
+        <div id="calculatorModule" class="module-content hidden">
+            <div class="calculator-container">
+                <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Calculadora de Saldo de Caixa</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6">
+                    <div class="flex flex-col">
+                        <label for="trocoInicial" class="text-gray-700 font-medium mb-1">Troco Inicial:</label>
+                        <input type="number" id="trocoInicial" placeholder="Ex: 150.00" class="focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="trocoFinal" class="text-gray-700 font-medium mb-1">Troco Final:</label>
+                        <input type="number" id="trocoFinal" placeholder="Ex: 130.00" class="focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="md:col-span-2">
+                        <div class="flex items-center mb-2">
+                            <label class="text-gray-700 font-medium">Sangria (se houver):</label>
+                            <button type="button" id="addSangriaBtn" class="ml-3 bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2 rounded-full shadow-md transition-transform transform hover:scale-110">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div id="sangriaInputsContainer" class="space-y-2">
+                            </div>
+                    </div>
+                    <div id="maquininhasInputsContainer" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        </div>
+                    <div class="flex flex-col">
+                        <label for="vendasPosFechamentoCalculadora" class="text-gray-700 font-medium mb-1">Vendas Pós-Fechamento (Sistema):</label>
+                        <div class="relative flex items-center">
+                            <input type="number" id="vendasPosFechamentoCalculadora" value="0.00" step="0.01" class="focus:ring-blue-500 focus:border-blue-500 bg-gray-100 pr-10" readonly>
+                            <button type="button" class="absolute right-2 text-gray-500 hover:text-blue-700" onclick="toggleEdit('vendasPosFechamentoCalculadora', this)">
+                                <i class="fas fa-pencil-alt" id="editIconPostClosing"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="vendasAvulsasCalculadora" class="text-gray-700 font-medium mb-1">Vendas Avulsas (Sistema):</label>
+                        <div class="relative flex items-center">
+                            <input type="number" id="vendasAvulsasCalculadora" value="0.00" step="0.01" class="focus:ring-blue-500 focus:border-blue-500 bg-gray-100 pr-10" readonly>
+                            <button type="button" class="absolute right-2 text-gray-500 hover:text-blue-700" onclick="toggleEdit('vendasAvulsasCalculadora', this)">
+                                <i class="fas fa-pencil-alt" id="editIconLooseProducts"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="vendasDinheiro" class="text-gray-700 font-medium mb-1">Vendas Sistema (Dinheiro):</label>
+                        <input type="number" id="vendasDinheiro" placeholder="Ex: 200.00" class="focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="vendasCartao" class="text-gray-700 font-medium mb-1">Vendas Sistema (Cartão):</label>
+                        <input type="number" id="vendasCartao" placeholder="Ex: 700.00" class="focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="vendasPix" class="text-gray-700 font-medium mb-1">Vendas Sistema (Pix/Carteira Digital):</label>
+                        <input type="number" id="vendasPix" placeholder="Ex: 100.00" class="focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="flex justify-center mb-6">
+                    <button onclick="calcularSaldoCaixa()">Calcular Saldo do Caixa</button>
+                </div>
+                <div id="calculatorResultBox" class="calculator-result-box">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-3">Resultados do Fechamento</h2>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
+                        <span class="text-gray-600 text-right">Diferença de Troco:</span>
+                        <span id="detalheDiferencaTroco" class="font-semibold text-gray-800 text-left">R$ 0,00</span>
+                        <span class="text-gray-600 text-right">Total Sangrias:</span>
+                        <span id="detalheTotalSangrias" class="font-semibold text-gray-800 text-left">R$ 0,00</span>
+                        <span class="text-gray-600 text-right">Total Maquininhas:</span>
+                        <span id="detalheTotalMaquininhas" class="font-semibold text-gray-800 text-left">R$ 0,00</span>
+                        <span class="text-gray-600 text-right">Vendas Pós-Fechamento:</span>
+                        <span id="detalheVendasPos" class="font-semibold text-gray-800 text-left">R$ 0,00</span>
+                    </div>
+                    <hr class="border-gray-300 my-3">
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-lg">
+                            <span class="font-semibold text-gray-700">(=) Total Entradas:</span>
+                            <span id="resultadoTotalEntradas" class="font-bold text-blue-700">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-lg">
+                            <span class="font-semibold text-gray-700">(-) Total Saídas (Vendas Sistema):</span>
+                            <span id="resultadoTotalVendasSistema" class="font-bold text-orange-600">R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-2xl mt-3 pt-2 border-t-2 border-gray-400 border-dashed">
+                            <span class="font-bold text-gray-900">SALDO DO CAIXA:</span>
+                            <span id="resultadoSaldoCaixa" class="font-bold text-green-700">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="adminModule" class="module-content hidden">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Gerenciamento de Operadores</h2>
+            <form id="operatorForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
+                <input type="hidden" id="operatorId">
+                <div>
+                    <label for="operatorName" class="block text-sm font-medium text-gray-700">Nome Completo:</label>
+                    <input type="text" id="operatorName" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="operatorUsername" class="block text-sm font-medium text-gray-700">Nome de Usuário:</label>
+                    <input type="text" id="operatorUsername" class="input-field mt-1" required>
+                </div>
+                <div>
+                    <label for="operatorPassword" class="block text-sm font-medium text-gray-700">Senha:</label>
+                    <input type="password" id="operatorPassword" class="input-field mt-1" required>
+                </div>
+                <div class="md:col-span-2 flex justify-end space-x-4">
+                    <button type="submit" class="btn-primary">Adicionar Operador</button>
+                    <button type="button" id="cancelOperatorEdit" class="btn-secondary hidden">Cancelar Edição</button>
+                </div>
+            </form>
+            <h3 class="text-xl font-semibold text-gray-700 mb-3">Operadores Cadastrados</h3>
+            <div class="table-container rounded-lg shadow-sm mb-6">
+                <table class="min-w-full bg-white border-collapse">
+                    <thead>
+                        <tr class="table-header">
+                            <th>Nome</th>
+                            <th>Nome de Usuário</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="operatorList">
+                        </tbody>
+                </table>
+            </div>
+
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4 mt-8">Configuração da Calculadora (Maquininhas)</h2>
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
+                <form id="maquininhaTypeForm" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <input type="hidden" id="maquininhaTypeId">
+                    <div>
+                        <label for="maquininhaTypeName" class="block text-sm font-medium text-gray-700">Nome da Maquininha:</label>
+                        <input type="text" id="maquininhaTypeName" class="input-field mt-1" placeholder="Ex: Maquininha Cielo" required>
+                    </div>
+                    <div class="flex items-end justify-end space-x-4">
+                        <button type="submit" class="btn-primary">Adicionar/Atualizar Maquininha</button>
+                        <button type="button" id="cancelMaquininhaTypeEdit" class="btn-secondary hidden">Cancelar Edição</button>
+                    </div>
+                </form>
+                <h3 class="text-xl font-semibold text-gray-700 mb-3">Maquininhas Cadastradas</h3>
+                <div class="table-container rounded-lg shadow-sm">
+                    <table class="min-w-full bg-white border-collapse">
+                        <thead>
+                            <tr class="table-header">
+                                <th>Nome</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="maquininhaTypesList">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4 mt-8">Configurações de Backup</h2>
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
+                <div class="mb-4">
+                    <label for="backupFolderPath" class="block text-sm font-medium text-gray-700">Pasta de Destino do Backup (Apenas para registro):</label>
+                    <input type="text" id="backupFolderPath" class="input-field mt-1 bg-gray-200" placeholder="Ex: C:\Users\SeuUsuario\Documents\BackupsFarmacia" disabled>
+                    <p class="text-sm text-gray-600 mt-1">
+                        *Atenção: Por motivos de segurança do navegador, não é possível forçar o download para uma pasta específica. O arquivo será salvo na sua pasta padrão de downloads ou você será perguntado onde salvar.
+                    </p>
+                </div>
+                <div class="mb-4">
+                    <label for="importBackupFile" class="block text-sm font-medium text-gray-700">Importar Backup:</label>
+                    <input type="file" id="importBackupFile" accept=".json" class="input-field mt-1">
+                    <p class="text-sm text-red-600 mt-1">
+                        *Importar um backup irá **sobrescrever todos os dados existentes** no sistema (vendas, produtos, operadores, históricos de caixa). Use com cautela!
+                    </p>
+                </div>
+                <div class="flex justify-end">
+                    <button id="importBackupBtn" class="btn-primary">Importar Dados do Backup</button>
+                </div>
+            </div>
+
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4 mt-8">Configuração de Backup Automático</h2>
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
+                <div class="flex items-center mb-4">
+                    <input type="checkbox" id="enableAutoBackupToggle" class="mr-2 h-5 w-5 text-blue-600 rounded">
+                    <label for="enableAutoBackupToggle" class="text-sm font-medium text-gray-700">Ativar Backup Automação</label>
+                </div>
+                <div class="mb-4">
+                    <label for="autoBackupTimeInput" class="block text-sm font-medium text-gray-700">Horário do Backup Automático:</label>
+                    <input type="time" id="autoBackupTimeInput" class="input-field mt-1" value="03:00">
+                    <p class="text-sm text-gray-600 mt-1">
+                        O backup será realizado diariamente neste horário, se o sistema estiver aberto.
+                    </p>
+                </div>
+            </div>
+
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4 mt-8">Uso de Armazenamento do Sistema</h2>
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
+                <p class="text-gray-700">
+                    O sistema armazena todos os dados no seu navegador. Aqui está uma estimativa do espaço utilizado:
+                </p>
+                <p id="storageUsageDisplay" class="text-lg font-bold text-blue-700 mt-2">
+                    Calculando...
+                </p>
+                <p class="text-sm text-gray-600 mt-1">
+                    *Este valor é uma aproximação e pode variar ligeiramente. O limite de armazenamento do navegador é geralmente de 5 a 10 MB.
+                </p>
+            </div>
+
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4 mt-8">Limpar Todos os Dados</h2>
+            <div class="mb-6 p-4 bg-red-50 rounded-lg shadow-sm border border-red-200">
+                <p class="text-red-800 mb-4">
+                    <strong class="font-bold">ATENÇÃO:</strong> Esta ação irá **apagar permanentemente todos os dados** do sistema (vendas, produtos, operadores, históricos de caixa). Um backup será baixado antes da exclusão. Use com extrema cautela!
+                </p>
+                <div class="flex justify-end">
+                    <button id="clearAllDataBtn" class="btn-danger">Limpar Todos os Dados</button>
+                </div>
+            </div>
+        </div>
+
+     <script type="module" src="js/main.js"></script>
+</body>
+</html>
